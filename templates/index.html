@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Meme Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+        }
+        .loading-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: white;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-2xl mx-auto">
+            <h1 class="text-4xl font-bold text-center mb-8 text-gray-800">AI Meme Generator</h1>
+            
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <button id="generateBtn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition duration-200">
+                    Generate Meme
+                </button>
+            </div>
+
+            <div id="memeContainer" class="bg-white rounded-lg shadow-lg p-6 hidden">
+                <img id="memeImage" class="w-full rounded-lg mb-4" alt="Generated Meme">
+                <a id="downloadBtn" class="block w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg text-center transition duration-200" download>
+                    Download Meme
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div id="loading" class="loading">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p class="text-xl">Generating your meme...</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('generateBtn').addEventListener('click', async () => {
+            const loading = document.getElementById('loading');
+            const memeContainer = document.getElementById('memeContainer');
+            const memeImage = document.getElementById('memeImage');
+            const downloadBtn = document.getElementById('downloadBtn');
+
+            try {
+                loading.style.display = 'block';
+                memeContainer.classList.add('hidden');
+
+                const response = await fetch('/generate-meme', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    memeImage.src = `/get-meme/${data.image_path}`;
+                    downloadBtn.href = `/get-meme/${data.image_path}`;
+                    memeContainer.classList.remove('hidden');
+                } else {
+                    alert('Failed to generate meme: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html> 
