@@ -7,5 +7,7 @@ services:
     envVars:
       - key: OPENAI_API_KEY
         sync: false
+      - key: NEWS_API_KEY
+        sync: false
       - key: PYTHON_VERSION
         value: 3.9.0
