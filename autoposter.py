@@ -10,6 +10,10 @@ import base64
 from io import BytesIO
 import random
 from openai import OpenAI
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Get API key from environment variable
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
