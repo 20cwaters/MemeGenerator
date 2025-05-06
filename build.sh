@@ -2,9 +2,9 @@
 # exit on error
 set -o errexit
 
-# Install ImageMagick
-apt-get update
-apt-get install -y imagemagick
+# Install system dependencies using apt-get with sudo
+sudo apt-get update
+sudo apt-get install -y imagemagick
 
 # Install Python dependencies
 pip install -r requirements.txt 
