@@ -20,9 +20,14 @@ OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
     raise EnvironmentError("OPENAI_API_KEY not found in environment variables.")
 
-mp_config.IMAGEMAGICK_BINARY = r"C:\Program Files\ImageMagick-7.1.1-Q16-HDRI\magick.exe"
-
 client = OpenAI(api_key=OPENAI_API_KEY)
+
+# Configure ImageMagick path based on environment
+if os.name == 'nt':  # Windows
+    mp_config.IMAGEMAGICK_BINARY = r"C:\Program Files\ImageMagick-7.1.1-Q16-HDRI\magick.exe"
+else:  # Linux (Render) or other Unix-like systems
+    mp_config.IMAGEMAGICK_BINARY = "magick"  # Use system-installed ImageMagick
+
 
 def encode_image_to_base64(image_path):
     """Convert image to base64 for API transmission."""
