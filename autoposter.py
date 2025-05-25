@@ -10,38 +10,15 @@ import base64
 from io import BytesIO
 import random
 from openai import OpenAI
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
 
 # Get API key from environment variable
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
     raise EnvironmentError("OPENAI_API_KEY not found in environment variables.")
 
+mp_config.IMAGEMAGICK_BINARY = r"C:\Program Files\ImageMagick-7.1.1-Q16-HDRI\magick.exe"
+
 client = OpenAI(api_key=OPENAI_API_KEY)
-
-# Configure ImageMagick path based on environment
-try:
-    if os.name == 'nt':  # Windows
-        mp_config.IMAGEMAGICK_BINARY = r"C:\Program Files\ImageMagick-7.1.1-Q16-HDRI\magick.exe"
-    else:  # Linux (Render) or other Unix-like systems
-        # Try to find ImageMagick in common locations
-        possible_paths = [
-            "/usr/bin/magick",
-            "/usr/local/bin/magick",
-            "magick"
-        ]
-        for path in possible_paths:
-            if os.path.exists(path):
-                mp_config.IMAGEMAGICK_BINARY = path
-                break
-        else:
-            print("Warning: ImageMagick not found. Some image processing features may be limited.")
-except Exception as e:
-    print(f"Warning: Error configuring ImageMagick: {e}")
-
 
 def encode_image_to_base64(image_path):
     """Convert image to base64 for API transmission."""

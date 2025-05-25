@@ -4,10 +4,3 @@ moviepy>=1.0.3
 Pillow>=10.0.0
 openai>=1.0.0
 newsapi-python==0.2.7
-python-dotenv>=1.0.0
-numpy>=1.17.3
-decorator>=4.0.2
-imageio>=2.5
-imageio-ffmpeg>=0.2.0
-tqdm>=4.11.2
-proglog<=1.0.0
