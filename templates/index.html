@@ -1,100 +1,509 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Meme Generator</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <style>
-        .loading {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 1000;
-        }
-        .loading-content {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            color: white;
-        }
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Meme Generator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d0d14;
+      --surface:   #16161f;
+      --surface2:  #1e1e2e;
+      --border:    #2a2a40;
+      --accent:    #7c3aed;
+      --accent2:   #a855f7;
+      --accent3:   #ec4899;
+      --text:      #e2e2f0;
+      --muted:     #6b6b8a;
+      --success:   #22c55e;
+      --error:     #ef4444;
+      --radius:    14px;
+      --shadow:    0 8px 32px rgba(0,0,0,0.5);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      padding: 28px 24px 20px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, #110d1e 0%, var(--bg) 100%);
+    }
+    header .logo {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, var(--accent2), var(--accent3));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    header .tagline {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    /* ── Main layout ── */
+    main {
+      flex: 1;
+      width: 100%;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 36px 20px 60px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      box-shadow: var(--shadow);
+    }
+
+    /* ── Generate button ── */
+    #generateBtn {
+      width: 100%;
+      padding: 18px 32px;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg, var(--accent), var(--accent3));
+      color: #fff;
+      box-shadow: 0 4px 24px rgba(124,58,237,0.45);
+      transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+    }
+    #generateBtn:hover:not(:disabled) {
+      opacity: 0.93;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(124,58,237,0.55);
+    }
+    #generateBtn:active:not(:disabled) { transform: translateY(0); }
+    #generateBtn:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+    #generateBtn .btn-icon { margin-right: 10px; font-size: 1.2rem; }
+
+    /* ── Progress steps ── */
+    #progressSection { display: none; }
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      border-radius: 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      transition: border-color 0.3s, background 0.3s;
+    }
+    .step.active {
+      border-color: var(--accent);
+      background: #1a1430;
+    }
+    .step.done {
+      border-color: var(--success);
+      background: #0d1f14;
+    }
+    .step-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+      background: var(--border);
+      transition: background 0.3s;
+    }
+    .step.active .step-icon { background: var(--accent); }
+    .step.done .step-icon { background: var(--success); }
+    .step-label { font-size: 0.9rem; font-weight: 500; color: var(--muted); }
+    .step.active .step-label,
+    .step.done .step-label { color: var(--text); }
+
+    /* Spinner for active step */
+    .spinner {
+      display: none;
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.25);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+    .step.active .spinner { display: block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Meme result ── */
+    #resultSection { display: none; }
+
+    .meme-frame {
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: #000;
+      line-height: 0;
+    }
+    .meme-frame img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .result-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 18px;
+    }
+    .btn {
+      flex: 1;
+      padding: 13px 20px;
+      border: none;
+      border-radius: 9px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      text-align: center;
+      transition: opacity 0.2s, transform 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn-download {
+      background: linear-gradient(135deg, #16a34a, #22c55e);
+      color: #fff;
+    }
+    .btn-again {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    /* ── Gallery ── */
+    #gallerySection { display: none; }
+
+    .section-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 16px;
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+    }
+    .gallery-item {
+      border-radius: 9px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: transform 0.2s, border-color 0.2s;
+      background: #000;
+      aspect-ratio: 4/3;
+      display: flex;
+      align-items: center;
+    }
+    .gallery-item:hover {
+      transform: translateY(-3px) scale(1.02);
+      border-color: var(--accent2);
+    }
+    .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    /* ── Lightbox ── */
+    #lightbox {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.88);
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    #lightbox.open { display: flex; }
+    #lightbox img {
+      max-width: 90vw;
+      max-height: 85vh;
+      border-radius: 10px;
+      box-shadow: 0 16px 64px rgba(0,0,0,0.8);
+    }
+    #lightboxClose {
+      position: fixed;
+      top: 20px; right: 24px;
+      font-size: 2rem;
+      color: #fff;
+      cursor: pointer;
+      line-height: 1;
+      background: none;
+      border: none;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+    #lightboxClose:hover { opacity: 1; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 28px; left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 12px 22px;
+      border-radius: 100px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      box-shadow: var(--shadow);
+      transition: transform 0.35s cubic-bezier(.34,1.56,.64,1), opacity 0.3s;
+      opacity: 0;
+      z-index: 1000;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    #toast.error { border-color: var(--error); color: var(--error); }
+  </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
-    <div class="container mx-auto px-4 py-8">
-        <div class="max-w-2xl mx-auto">
-            <h1 class="text-4xl font-bold text-center mb-8 text-gray-800">AI Meme Generator</h1>
-            
-            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-                <button id="generateBtn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition duration-200">
-                    Generate Meme
-                </button>
-            </div>
+<body>
 
-            <div id="memeContainer" class="bg-white rounded-lg shadow-lg p-6 hidden">
-                <img id="memeImage" class="w-full rounded-lg mb-4" alt="Generated Meme">
-                <a id="downloadBtn" class="block w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg text-center transition duration-200" download>
-                    Download Meme
-                </a>
-            </div>
-        </div>
+  <header>
+    <div class="logo">✦ AI Meme Generator</div>
+    <p class="tagline">Powered by GPT-4 vision · generates a unique meme every time</p>
+  </header>
+
+  <main>
+    <!-- Generate card -->
+    <div class="card">
+      <button id="generateBtn">
+        <span class="btn-icon">⚡</span>Generate a Meme
+      </button>
     </div>
 
-    <div id="loading" class="loading">
-        <div class="loading-content">
-            <div class="spinner"></div>
-            <p class="text-xl">Generating your meme...</p>
+    <!-- Progress -->
+    <div class="card" id="progressSection">
+      <div class="steps">
+        <div class="step" id="step1">
+          <div class="step-icon">🎲</div>
+          <span class="step-label">Picking a meme template</span>
+          <div class="spinner"></div>
         </div>
+        <div class="step" id="step2">
+          <div class="step-icon">🔍</div>
+          <span class="step-label">Analyzing the image with AI</span>
+          <div class="spinner"></div>
+        </div>
+        <div class="step" id="step3">
+          <div class="step-icon">✍️</div>
+          <span class="step-label">Writing a caption</span>
+          <div class="spinner"></div>
+        </div>
+        <div class="step" id="step4">
+          <div class="step-icon">🖼️</div>
+          <span class="step-label">Compositing the final meme</span>
+          <div class="spinner"></div>
+        </div>
+      </div>
     </div>
 
-    <script>
-        document.getElementById('generateBtn').addEventListener('click', async () => {
-            const loading = document.getElementById('loading');
-            const memeContainer = document.getElementById('memeContainer');
-            const memeImage = document.getElementById('memeImage');
-            const downloadBtn = document.getElementById('downloadBtn');
+    <!-- Result -->
+    <div class="card" id="resultSection">
+      <div class="meme-frame">
+        <img id="memeImage" alt="Generated meme" />
+      </div>
+      <div class="result-actions">
+        <a id="downloadBtn" class="btn btn-download" download>
+          ⬇ Download
+        </a>
+        <button id="generateAnotherBtn" class="btn btn-again">
+          ↺ Generate Another
+        </button>
+      </div>
+    </div>
 
-            try {
-                loading.style.display = 'block';
-                memeContainer.classList.add('hidden');
+    <!-- Gallery -->
+    <div id="gallerySection">
+      <p class="section-title">Previously Generated</p>
+      <div class="gallery-grid" id="galleryGrid"></div>
+    </div>
+  </main>
 
-                const response = await fetch('/generate-meme', {
-                    method: 'POST'
-                });
-                const data = await response.json();
+  <!-- Lightbox -->
+  <div id="lightbox">
+    <button id="lightboxClose">✕</button>
+    <img id="lightboxImg" src="" alt="Meme" />
+  </div>
 
-                if (data.success) {
-                    memeImage.src = `/get-meme/${data.image_path}`;
-                    downloadBtn.href = `/get-meme/${data.image_path}`;
-                    memeContainer.classList.remove('hidden');
-                } else {
-                    alert('Failed to generate meme: ' + data.error);
-                }
-            } catch (error) {
-                alert('Error: ' + error.message);
-            } finally {
-                loading.style.display = 'none';
-            }
+  <!-- Toast -->
+  <div id="toast"></div>
+
+  <script>
+    // ── DOM refs ──
+    const generateBtn        = document.getElementById('generateBtn');
+    const generateAnotherBtn = document.getElementById('generateAnotherBtn');
+    const progressSection    = document.getElementById('progressSection');
+    const resultSection      = document.getElementById('resultSection');
+    const gallerySection     = document.getElementById('gallerySection');
+    const memeImage          = document.getElementById('memeImage');
+    const downloadBtn        = document.getElementById('downloadBtn');
+    const galleryGrid        = document.getElementById('galleryGrid');
+    const lightbox           = document.getElementById('lightbox');
+    const lightboxImg        = document.getElementById('lightboxImg');
+    const lightboxClose      = document.getElementById('lightboxClose');
+    const steps              = [1,2,3,4].map(n => document.getElementById('step' + n));
+
+    // ── Toast ──
+    let toastTimer;
+    function showToast(msg, isError = false) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.className = 'show' + (isError ? ' error' : '');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { el.className = ''; }, 3500);
+    }
+
+    // ── Steps ──
+    function resetSteps() {
+      steps.forEach(s => s.className = 'step');
+    }
+    function activateStep(n) {
+      if (n > 1) steps[n-2].className = 'step done';
+      steps[n-1].className = 'step active';
+    }
+    function completeSteps() {
+      steps.forEach(s => s.className = 'step done');
+    }
+
+    // ── Gallery ──
+    async function loadGallery() {
+      try {
+        const res = await fetch('/memes');
+        const data = await res.json();
+        const memes = data.memes || [];
+        if (memes.length === 0) return;
+
+        galleryGrid.innerHTML = '';
+        memes.forEach(filename => {
+          const item = document.createElement('div');
+          item.className = 'gallery-item';
+          const img = document.createElement('img');
+          img.src = `/meme/${filename}`;
+          img.alt = filename;
+          img.loading = 'lazy';
+          img.addEventListener('click', () => {
+            lightboxImg.src = `/meme/${filename}`;
+            lightbox.className = 'open';
+          });
+          item.appendChild(img);
+          galleryGrid.appendChild(item);
         });
-    </script>
+        gallerySection.style.display = 'block';
+      } catch (e) {
+        // Gallery is non-critical — fail silently
+      }
+    }
+
+    // ── Generate ──
+    async function generate() {
+      generateBtn.disabled = true;
+      resultSection.style.display  = 'none';
+      progressSection.style.display = 'block';
+      resetSteps();
+      activateStep(1);
+
+      // The server handles all 4 steps in one request.
+      // We animate the steps on a rough timing basis so the UI feels alive.
+      const stepTimings = [1200, 2500, 2500];
+      let stepIdx = 1;
+      const stepInterval = setInterval(() => {
+        if (stepIdx < 4) {
+          stepIdx++;
+          activateStep(stepIdx);
+        }
+      }, stepTimings[stepIdx - 1] || 2000);
+
+      try {
+        const res = await fetch('/generate-meme', { method: 'POST' });
+        const data = await res.json();
+        clearInterval(stepInterval);
+
+        if (data.success) {
+          completeSteps();
+          const src = `/meme/${data.filename}`;
+          memeImage.src = src;
+          downloadBtn.href = src;
+          downloadBtn.download = data.filename;
+
+          setTimeout(() => {
+            progressSection.style.display = 'none';
+            resultSection.style.display = 'block';
+            resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 600);
+
+          await loadGallery();
+        } else {
+          throw new Error(data.error || 'Unknown error');
+        }
+      } catch (err) {
+        clearInterval(stepInterval);
+        progressSection.style.display = 'none';
+        showToast('Failed to generate meme: ' + err.message, true);
+      } finally {
+        generateBtn.disabled = false;
+      }
+    }
+
+    // ── Event listeners ──
+    generateBtn.addEventListener('click', generate);
+    generateAnotherBtn.addEventListener('click', () => {
+      resultSection.style.display = 'none';
+      generate();
+    });
+
+    lightboxClose.addEventListener('click', () => lightbox.className = '');
+    lightbox.addEventListener('click', e => {
+      if (e.target === lightbox) lightbox.className = '';
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') lightbox.className = '';
+    });
+
+    // ── Load gallery on startup ──
+    loadGallery();
+  </script>
 </body>
-</html> 
+</html>
