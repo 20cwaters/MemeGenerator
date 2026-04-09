@@ -4,7 +4,13 @@ from autoposter import get_meme_template, save_image, analyze_image, generate_me
 
 app = Flask(__name__)
 
-FINAL_IMAGES_DIR = os.path.join(os.path.dirname(__file__), "final_images")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+FINAL_IMAGES_DIR = os.path.join(BASE_DIR, "final_images")
+ORIGINAL_IMAGES_DIR = os.path.join(BASE_DIR, "original_images")
+
+# Create dirs at startup (gunicorn doesn't run __main__)
+os.makedirs(FINAL_IMAGES_DIR, exist_ok=True)
+os.makedirs(ORIGINAL_IMAGES_DIR, exist_ok=True)
 
 
 @app.route('/')
@@ -19,7 +25,7 @@ def generate_meme():
         if not image_url:
             return jsonify({'success': False, 'error': 'Could not fetch a meme template'}), 500
 
-        saved_image_path = save_image(image_url, save_directory="original_images")
+        saved_image_path = save_image(image_url, save_directory=ORIGINAL_IMAGES_DIR)
         if not saved_image_path:
             return jsonify({'success': False, 'error': 'Could not download the template image'}), 500
 
@@ -58,6 +64,5 @@ def list_memes():
 
 
 if __name__ == '__main__':
-    os.makedirs('original_images', exist_ok=True)
-    os.makedirs('final_images', exist_ok=True)
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=False, host='0.0.0.0', port=port)
