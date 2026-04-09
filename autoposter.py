@@ -122,19 +122,25 @@ def save_image(image_url, save_directory="original_images"):
 
 
 def _load_impact_font(size):
-    """Try to load the Impact font at the given size, falling back to default."""
+    """Load the bundled Anton font, falling back to system fonts or Pillow default."""
+    # Bundled font (always available, committed to the repo)
+    bundled = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts", "Anton-Regular.ttf")
     candidates = [
+        bundled,
         "C:/Windows/Fonts/impact.ttf",
         "/usr/share/fonts/truetype/msttcorefonts/Impact.ttf",
         "/usr/share/fonts/truetype/freefont/FreeMonoBold.ttf",
-        "impact.ttf",
     ]
     for path in candidates:
         try:
             return ImageFont.truetype(path, size)
         except Exception:
             pass
-    return ImageFont.load_default()
+    # Last resort: Pillow built-in (Pillow >= 10 supports size param)
+    try:
+        return ImageFont.load_default(size=size)
+    except TypeError:
+        return ImageFont.load_default()
 
 
 def _wrap_text(draw, text, font, max_width):
@@ -176,7 +182,8 @@ def create_image(text, background_path):
     top_text = lines[0] if len(lines) > 0 else ""
     bottom_text = lines[1] if len(lines) > 1 else ""
 
-    font_size = max(int(height * 0.08), 28)
+    # Size off the shorter dimension so text scales consistently on any template
+    font_size = max(int(min(width, height) * 0.11), 48)
     font = _load_impact_font(font_size)
     padding = 20
 
